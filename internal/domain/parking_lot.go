@@ -26,3 +26,20 @@ func (p *ParkingLot) Park(car Car) bool {
 	p.parkedCars = append(p.parkedCars, car)
 	return true
 }
+
+//to unpark the car from the lot
+func (p *ParkingLot) Unpark(car Car) bool {
+    for i, parkedCar := range p.parkedCars {
+        if parkedCar.Plate == car.Plate {
+            p.parkedCars = append(p.parkedCars[:i], p.parkedCars[i+1:]...)
+            return true
+        }
+    }
+    return false
+}
+
+
+//to get the number of currently parked cars
+func(p *ParkingLot) GetParkedCarsCount() int {
+	return len(p.parkedCars)
+}
