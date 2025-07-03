@@ -1,11 +1,16 @@
 package domain
 
+import (
+	"time"
+)
+
 type ParkingLot struct {
 	capacity         int
 	parkedCars       []Car
 	ownerObserver    Owner
 	securityObserver Security
 	wasFull bool // to track previous full state
+	parkingTimes     map[string]time.Time // Track when each car was parked for use case-8
 }
 
 //constructor to create a new parking lot with required capacity
@@ -14,6 +19,7 @@ func NewParkingLot(capacity int) *ParkingLot {
 		capacity:   capacity,
 		parkedCars: make([]Car, 0),
 		wasFull: false,
+		parkingTimes: make(map[string]time.Time), //added for use case -8
 	}
 }
 
@@ -41,6 +47,9 @@ func (p *ParkingLot) Park(car Car) bool {
 
 	p.parkedCars = append(p.parkedCars, car)
 
+	// Record parking time for use case -8
+    p.parkingTimes[car.Plate] = time.Now()
+
 	// Notify owner if lot is now full
     if len(p.parkedCars) == p.capacity {
         if p.ownerObserver != nil {
@@ -61,6 +70,9 @@ func (p *ParkingLot) Unpark(car Car) bool {
 		if parkedCar.Plate == car.Plate {
 			p.parkedCars = append(p.parkedCars[:i], p.parkedCars[i+1:]...)
             
+			// Remove parking time record for use case-8
+            delete(p.parkingTimes, car.Plate)
+
 			//Notify owner if lot has space available
 			if p.wasFull && len(p.parkedCars) == p.capacity-1 {
 				if p.ownerObserver != nil {
@@ -89,6 +101,22 @@ func (p *ParkingLot) IsFull() bool {
 // to get the space available in the lot
 func(p *ParkingLot) NoofSpaceAvailable() int {
 	return p.capacity - len(p.parkedCars)
+}
+
+// GetParkingTime returns when a car was parked, use case -8
+func (p *ParkingLot) GetParkingTime(plateNumber string) time.Time {
+    if parkTime, exists := p.parkingTimes[plateNumber]; exists {
+        return parkTime
+    }
+    return time.Time{} // Zero time if not found
+}
+
+// GetParkingDuration returns how long a car has been parked, use-case 8
+func (p *ParkingLot) GetParkingDuration(plateNumber string) time.Duration {
+    if parkTime, exists := p.parkingTimes[plateNumber]; exists {
+        return time.Since(parkTime)
+    }
+    return 0 // Zero duration if not found
 }
 
 

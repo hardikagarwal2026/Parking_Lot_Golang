@@ -39,3 +39,35 @@ func (p *ParkingLot) FindCar(plateNumber string) int {
 	return -1
 }
 
+//use case - 9
+// ParkCarEvenly parks a car in the lot with the fewest cars for even distribution
+func (a *ParkingAttendant) ParkCarEvenly(lots []*ParkingLot, car Car) bool {
+	if len(lots) == 0 {
+		return false
+	}
+	
+	// Find the lot with the fewest parked cars
+	var selectedLot *ParkingLot
+	minCars := -1
+	
+	for _, lot := range lots {
+		if lot.IsFull() {
+			continue // Skip full lots
+		}
+		
+		parkedCount := lot.GetParkedCarsCount()
+		if minCars == -1 || parkedCount < minCars {
+			minCars = parkedCount
+			selectedLot = lot
+		}
+	}
+	
+	// If no lot is available, return false
+	if selectedLot == nil {
+		return false
+	}
+	
+	// Park the car in the selected lot
+	return selectedLot.Park(car)
+}
+
