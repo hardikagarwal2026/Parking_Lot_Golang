@@ -71,3 +71,55 @@ func (a *ParkingAttendant) ParkCarEvenly(lots []*ParkingLot, car Car) bool {
 	return selectedLot.Park(car)
 }
 
+
+// ParkHandicapCar parks a handicap car in the nearest available lot, for use case-10
+func (a *ParkingAttendant) ParkHandicapCar(lots []*ParkingLot, car Car) bool {
+    if len(lots) == 0 {
+        return false
+    }
+    
+    // Find the first available lot (nearest)
+    for _, lot := range lots {
+        if !lot.IsFull() {
+            return lot.Park(car)
+        }
+    }
+    
+    // No available lot found
+    return false
+}
+
+
+//use case-11
+// ParkLargeCar parks a large car in the lot with the most available space
+func (a *ParkingAttendant) ParkLargeCar(lots []*ParkingLot, car Car) bool {
+    if len(lots) == 0 {
+        return false
+    }
+    
+    // Find the lot with the most available space
+    var selectedLot *ParkingLot
+    maxAvailableSpace := -1
+    
+    for _, lot := range lots {
+        if lot.IsFull() {
+            continue // Skip full lots
+        }
+        
+        availableSpace := lot.GetAvailableSpaces()
+        if availableSpace > maxAvailableSpace {
+            maxAvailableSpace = availableSpace
+            selectedLot = lot
+        }
+    }
+    
+    // If no lot is available, return false
+    if selectedLot == nil {
+        return false
+    }
+    
+    // Park the car in the selected lot
+    return selectedLot.Park(car)
+}
+
+

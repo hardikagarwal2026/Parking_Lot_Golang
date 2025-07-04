@@ -97,9 +97,9 @@ func (p *ParkingLot) IsFull() bool {
 	return len(p.parkedCars) == p.capacity
 }
 
-
+// changed function name for use case-11
 // to get the space available in the lot
-func(p *ParkingLot) NoofSpaceAvailable() int {
+func(p *ParkingLot) GetAvailableSpaces() int {
 	return p.capacity - len(p.parkedCars)
 }
 
