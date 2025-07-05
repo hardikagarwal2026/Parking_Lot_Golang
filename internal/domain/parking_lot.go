@@ -147,5 +147,19 @@ func (p *ParkingLot) FindCarsByMakeAndColor(make string, color string) []Car {
     return matchingCars
 }
 
+//use case - 14
+// FindCarsByMake returns all cars of a specific make
+func (p *ParkingLot) FindCarsByMake(make string) []Car {
+    var matchingCars []Car
+    
+    for _, parkedCar := range p.parkedCars {
+        if parkedCar.Make == make {
+            matchingCars = append(matchingCars, parkedCar)
+        }
+    }
+    
+    return matchingCars
+}
+
 
 

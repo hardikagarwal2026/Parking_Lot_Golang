@@ -66,3 +66,31 @@ type RobberyInvestigation struct {
     SlotID        int
     AttendantName string
 }
+
+//use case- 14
+// InvestigateBMWCars finds all BMW cars for security enhancement purposes
+func (pd *PoliceDepartment) InvestigateBMWCars(lots []*ParkingLot) []SecurityInvestigation {
+    var allBMWCars []SecurityInvestigation
+    
+    for i, lot := range lots {
+        bmwCars := lot.FindCarsByMake("BMW")
+        for _, car := range bmwCars {
+            investigation := SecurityInvestigation{
+                Car:    car,
+                LotID:  i,
+                SlotID: lot.FindCar(car.Plate),
+            }
+            allBMWCars = append(allBMWCars, investigation)
+        }
+    }
+    
+    return allBMWCars
+}
+
+// SecurityInvestigation represents information for security enhancement purposes
+type SecurityInvestigation struct {
+    Car    Car
+    LotID  int
+    SlotID int
+}
+
