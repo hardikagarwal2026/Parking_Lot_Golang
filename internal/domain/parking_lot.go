@@ -120,3 +120,32 @@ func (p *ParkingLot) GetParkingDuration(plateNumber string) time.Duration {
 }
 
 
+//use case-12
+// FindCarsByColor returns all cars of a specific color
+func (p *ParkingLot) FindCarsByColor(color string) []Car {
+    var matchingCars []Car
+    
+    for _, parkedCar := range p.parkedCars {
+        if parkedCar.Color == color {
+            matchingCars = append(matchingCars, parkedCar)
+        }
+    }
+    
+    return matchingCars
+}
+
+// FindCarsByMakeAndColor returns all cars of a specific make and color
+func (p *ParkingLot) FindCarsByMakeAndColor(make string, color string) []Car {
+    var matchingCars []Car
+    
+    for _, parkedCar := range p.parkedCars {
+        if parkedCar.Make == make && parkedCar.Color == color {
+            matchingCars = append(matchingCars, parkedCar)
+        }
+    }
+    
+    return matchingCars
+}
+
+
+
