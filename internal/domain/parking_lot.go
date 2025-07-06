@@ -161,5 +161,26 @@ func (p *ParkingLot) FindCarsByMake(make string) []Car {
     return matchingCars
 }
 
+//use case-15
+// FindCarsParkedInLastMinutes returns all cars parked within the specified number of minutes
+func (p *ParkingLot) FindCarsParkedInLastMinutes(minutes int) []Car {
+    var recentCars []Car
+    cutoffTime := time.Now().Add(-time.Duration(minutes) * time.Minute)
+    
+    for _, parkedCar := range p.parkedCars {
+        if parkTime, exists := p.parkingTimes[parkedCar.Plate]; exists {
+            if parkTime.After(cutoffTime) {
+                recentCars = append(recentCars, parkedCar)
+            }
+        }
+    }
+    
+    return recentCars
+}
+
+// SetParkingTime sets the parking time for a car (used for testing)
+func (p *ParkingLot) SetParkingTime(plateNumber string, parkTime time.Time) {
+    p.parkingTimes[plateNumber] = parkTime
+}
 
 

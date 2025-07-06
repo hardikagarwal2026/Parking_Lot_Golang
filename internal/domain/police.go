@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 // PoliceDepartment represents law enforcement investigation capabilities
 type PoliceDepartment struct {
     departmentName string
@@ -94,3 +96,31 @@ type SecurityInvestigation struct {
     SlotID int
 }
 
+//use case-15
+// InvestigateRecentlyParkedCars finds all cars parked within specified minutes for bomb threat investigation
+func (pd *PoliceDepartment) InvestigateRecentlyParkedCars(lots []*ParkingLot, minutes int) []BombThreatInvestigation {
+    var allRecentCars []BombThreatInvestigation
+    
+    for i, lot := range lots {
+        recentCars := lot.FindCarsParkedInLastMinutes(minutes)
+        for _, car := range recentCars {
+            investigation := BombThreatInvestigation{
+                Car:         car,
+                LotID:       i,
+                SlotID:      lot.FindCar(car.Plate),
+                ParkingTime: lot.GetParkingTime(car.Plate),
+            }
+            allRecentCars = append(allRecentCars, investigation)
+        }
+    }
+    
+    return allRecentCars
+}
+
+// BombThreatInvestigation represents information for bomb threat investigation
+type BombThreatInvestigation struct {
+    Car         Car
+    LotID       int
+    SlotID      int
+    ParkingTime time.Time
+}

@@ -900,3 +900,113 @@ func TestPoliceDepartment_InvestigateBMWCars_ShouldReturnAllBMWsWithLocations(t 
         }
     }
 }
+
+
+
+//use case-15
+func TestParkingLot_FindCarsParkedInLastMinutes_ShouldReturnRecentCars(t *testing.T) {
+    lot := domain.NewParkingLot(100)
+    
+    // Park cars at different times
+    oldCar := domain.Car{Plate: "MH12AB1234", Make: "Toyota", Color: "Blue", Size: domain.Small}
+    recentCar1 := domain.Car{Plate: "MH12AB5678", Make: "Honda", Color: "White", Size: domain.Medium}
+    recentCar2 := domain.Car{Plate: "MH12AB9999", Make: "BMW", Color: "Black", Size: domain.Large}
+    
+    // Park old car first
+    lot.Park(oldCar)
+    
+    // Simulate time passing by manually setting parking time to 45 minutes ago
+    oldTime := time.Now().Add(-45 * time.Minute)
+    lot.SetParkingTime(oldCar.Plate, oldTime)
+    
+    // Park recent cars (will have current time)
+    lot.Park(recentCar1)
+    lot.Park(recentCar2)
+    
+    // Find cars parked in last 30 minutes
+    recentCars := lot.FindCarsParkedInLastMinutes(30)
+    
+    if len(recentCars) != 2 {
+        t.Errorf("Expected 2 recent cars, got %d", len(recentCars))
+    }
+    
+    // Verify the correct cars are returned
+    foundPlates := make(map[string]bool)
+    for _, car := range recentCars {
+        foundPlates[car.Plate] = true
+    }
+    
+    if !foundPlates["MH12AB5678"] {
+        t.Errorf("Expected to find recent car MH12AB5678")
+    }
+    if !foundPlates["MH12AB9999"] {
+        t.Errorf("Expected to find recent car MH12AB9999")
+    }
+    if foundPlates["MH12AB1234"] {
+        t.Errorf("Old car should not be in recent cars list")
+    }
+}
+
+func TestParkingLot_FindCarsParkedInLastMinutes_ShouldReturnEmptySlice_WhenNoRecentCars(t *testing.T) {
+    lot := domain.NewParkingLot(100)
+    
+    oldCar := domain.Car{Plate: "MH12AB1234", Make: "Toyota", Color: "Blue", Size: domain.Small}
+    lot.Park(oldCar)
+    
+    // Set parking time to 45 minutes ago
+    oldTime := time.Now().Add(-45 * time.Minute)
+    lot.SetParkingTime(oldCar.Plate, oldTime)
+    
+    // Find cars parked in last 30 minutes
+    recentCars := lot.FindCarsParkedInLastMinutes(30)
+    
+    if len(recentCars) != 0 {
+        t.Errorf("Expected 0 recent cars, got %d", len(recentCars))
+    }
+}
+
+func TestPoliceDepartment_InvestigateRecentlyParkedCars_ShouldReturnBombThreatInvestigation(t *testing.T) {
+    lot1 := domain.NewParkingLot(100)
+    lot2 := domain.NewParkingLot(100)
+    lots := []*domain.ParkingLot{lot1, lot2}
+    police := domain.NewPoliceDepartment("City Police")
+    
+    recentCar1 := domain.Car{Plate: "MH12AB5678", Make: "Honda", Color: "White", Size: domain.Medium}
+    recentCar2 := domain.Car{Plate: "MH12AB9999", Make: "BMW", Color: "Black", Size: domain.Large}
+    oldCar := domain.Car{Plate: "MH12AB1234", Make: "Toyota", Color: "Blue", Size: domain.Small}
+    
+    // Park cars
+    lot1.Park(recentCar1)
+    lot1.Park(oldCar)
+    lot2.Park(recentCar2)
+    
+    // Set old car's parking time to 45 minutes ago
+    oldTime := time.Now().Add(-45 * time.Minute)
+    lot1.SetParkingTime(oldCar.Plate, oldTime)
+    
+    bombThreatInvestigation := police.InvestigateRecentlyParkedCars(lots, 30)
+    
+    if len(bombThreatInvestigation) != 2 {
+        t.Errorf("Expected 2 recent car investigations, got %d", len(bombThreatInvestigation))
+    }
+    
+    // Verify investigation details
+    for _, investigation := range bombThreatInvestigation {
+        if investigation.LotID < 0 || investigation.LotID >= len(lots) {
+            t.Errorf("Invalid lot ID: %d", investigation.LotID)
+        }
+        if investigation.SlotID < 0 {
+            t.Errorf("Invalid slot ID: %d", investigation.SlotID)
+        }
+        if investigation.ParkingTime.IsZero() {
+            t.Errorf("Parking time should not be zero")
+        }
+        
+        // Verify it's actually a recent car
+        timeSinceParking := time.Since(investigation.ParkingTime)
+        if timeSinceParking > 30*time.Minute {
+            t.Errorf("Car should be parked within last 30 minutes, but was parked %v ago", timeSinceParking)
+        }
+    }
+}
+
