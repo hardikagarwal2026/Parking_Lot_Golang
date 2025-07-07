@@ -1010,3 +1010,185 @@ func TestPoliceDepartment_InvestigateRecentlyParkedCars_ShouldReturnBombThreatIn
     }
 }
 
+//use case-16
+func TestParkingLot_FindSmallHandicapCarsInRows_ShouldReturnMatchingCars(t *testing.T) {
+    lot := domain.NewParkingLot(100)
+    
+    // Create cars for testing
+    smallHandicapCarRowB := domain.Car{
+        Plate: "MH12AB1234", 
+        Make:  "Toyota", 
+        Color: "Blue", 
+        Size:  domain.Small,
+    }
+    smallHandicapCarRowD := domain.Car{
+        Plate: "MH12AB5678", 
+        Make:  "Honda", 
+        Color: "White", 
+        Size:  domain.Small,
+    }
+    largeHandicapCarRowB := domain.Car{
+        Plate: "MH12AB9999", 
+        Make:  "BMW", 
+        Color: "Black", 
+        Size:  domain.Large,
+    }
+    smallRegularCarRowB := domain.Car{
+        Plate: "MH12AB7777", 
+        Make:  "Maruti", 
+        Color: "Red", 
+        Size:  domain.Small,
+    }
+    
+    // Park cars in specific rows
+    lot.ParkInRow(smallHandicapCarRowB, "B", true)  // Small handicap car in row B
+    lot.ParkInRow(smallHandicapCarRowD, "D", true)  // Small handicap car in row D
+    lot.ParkInRow(largeHandicapCarRowB, "B", true)  // Large handicap car in row B (should not match)
+    lot.ParkInRow(smallRegularCarRowB, "B", false)  // Small regular car in row B (should not match)
+    
+    // Find small handicap cars in rows B or D
+    targetRows := []string{"B", "D"}
+    matchingCars := lot.FindSmallHandicapCarsInRows(targetRows)
+    
+    if len(matchingCars) != 2 {
+        t.Errorf("Expected 2 small handicap cars in rows B or D, got %d", len(matchingCars))
+    }
+    
+    // Verify the correct cars are returned
+    foundPlates := make(map[string]bool)
+    for _, carInfo := range matchingCars {
+        foundPlates[carInfo.Car.Plate] = true
+        if carInfo.Car.Size != domain.Small {
+            t.Errorf("Expected small car, got %s", carInfo.Car.Size.String())
+        }
+        if !carInfo.IsHandicap {
+            t.Errorf("Expected handicap car, got regular car")
+        }
+        if carInfo.Row != "B" && carInfo.Row != "D" {
+            t.Errorf("Expected car in row B or D, got row %s", carInfo.Row)
+        }
+    }
+    
+    if !foundPlates["MH12AB1234"] {
+        t.Errorf("Expected to find small handicap car MH12AB1234 in row B")
+    }
+    if !foundPlates["MH12AB5678"] {
+        t.Errorf("Expected to find small handicap car MH12AB5678 in row D")
+    }
+}
+
+func TestPoliceDepartment_InvestigateHandicapPermitFraud_ShouldReturnCompleteInformation(t *testing.T) {
+    lot1 := domain.NewParkingLot(100)
+    lot2 := domain.NewParkingLot(100)
+    lots := []*domain.ParkingLot{lot1, lot2}
+    police := domain.NewPoliceDepartment("City Police")
+    
+    smallHandicapCar1 := domain.Car{Plate: "MH12AB1234", Make: "Toyota", Color: "Blue", Size: domain.Small}
+    smallHandicapCar2 := domain.Car{Plate: "MH12AB5678", Make: "Honda", Color: "White", Size: domain.Small}
+    largeHandicapCar := domain.Car{Plate: "MH12AB9999", Make: "BMW", Color: "Black", Size: domain.Large}
+    
+    // Park cars in target rows
+    lot1.ParkInRow(smallHandicapCar1, "B", true)
+    lot1.ParkInRow(largeHandicapCar, "D", true)  // Should not match (large car)
+    lot2.ParkInRow(smallHandicapCar2, "D", true)
+    
+    targetRows := []string{"B", "D"}
+    fraudInvestigation := police.InvestigateHandicapPermitFraud(lots, targetRows)
+    
+    if len(fraudInvestigation) != 2 {
+        t.Errorf("Expected 2 fraud investigations, got %d", len(fraudInvestigation))
+    }
+    
+    // Verify investigation details
+    for _, investigation := range fraudInvestigation {
+        if investigation.CarInfo.Car.Size != domain.Small {
+            t.Errorf("Expected small car in fraud investigation")
+        }
+        if !investigation.CarInfo.IsHandicap {
+            t.Errorf("Expected handicap car in fraud investigation")
+        }
+        if investigation.LotID < 0 || investigation.LotID >= len(lots) {
+            t.Errorf("Invalid lot ID: %d", investigation.LotID)
+        }
+    }
+}
+
+//Use case-17
+//Verifies that all parked cars are returned when the lot has vehicles
+func TestParkingLot_GetAllParkedCars_ShouldReturnAllCars(t *testing.T) {
+    lot := domain.NewParkingLot(100)
+    
+    car1 := domain.Car{Plate: "MH12AB1234", Make: "Toyota", Color: "Blue", Size: domain.Small}
+    car2 := domain.Car{Plate: "MH12AB5678", Make: "Honda", Color: "White", Size: domain.Medium}
+    car3 := domain.Car{Plate: "MH12AB9999", Make: "BMW", Color: "Black", Size: domain.Large}
+    
+    lot.Park(car1)
+    lot.Park(car2)
+    lot.Park(car3)
+    
+    allCars := lot.GetAllParkedCars()
+    
+    if len(allCars) != 3 {
+        t.Errorf("Expected 3 parked cars, got %d", len(allCars))
+    }
+    
+    // Verify all cars are returned
+    foundPlates := make(map[string]bool)
+    for _, car := range allCars {
+        foundPlates[car.Plate] = true
+    }
+    
+    if !foundPlates["MH12AB1234"] {
+        t.Errorf("Expected to find car MH12AB1234")
+    }
+    if !foundPlates["MH12AB5678"] {
+        t.Errorf("Expected to find car MH12AB5678")
+    }
+    if !foundPlates["MH12AB9999"] {
+        t.Errorf("Expected to find car MH12AB9999")
+    }
+}
+
+//Ensures empty slice is returned when the lot is empty
+func TestParkingLot_GetAllParkedCars_ShouldReturnEmptySlice_WhenLotEmpty(t *testing.T) {
+    lot := domain.NewParkingLot(100)
+    
+    allCars := lot.GetAllParkedCars()
+    
+    if len(allCars) != 0 {
+        t.Errorf("Expected 0 cars in empty lot, got %d", len(allCars))
+    }
+}
+
+//Confirms complete investigation information for fraudulent plate investigation
+func TestPoliceDepartment_InvestigateFraudulentPlates_ShouldReturnAllCarsInLot(t *testing.T) {
+    lot1 := domain.NewParkingLot(100)
+    lot2 := domain.NewParkingLot(100)
+    police := domain.NewPoliceDepartment("City Police")
+    
+    car1 := domain.Car{Plate: "MH12AB1234", Make: "Toyota", Color: "Blue", Size: domain.Small}
+    car2 := domain.Car{Plate: "MH12AB5678", Make: "Honda", Color: "White", Size: domain.Medium}
+    car3 := domain.Car{Plate: "MH12AB9999", Make: "BMW", Color: "Black", Size: domain.Large}
+    
+    lot1.Park(car1)
+    lot1.Park(car2)
+    lot2.Park(car3)
+    
+    // Investigate specific lot (lot1)
+    plateInvestigation := police.InvestigateFraudulentPlates(lot1)
+    
+    if len(plateInvestigation) != 2 {
+        t.Errorf("Expected 2 cars in lot1 investigation, got %d", len(plateInvestigation))
+    }
+    
+    // Verify investigation details
+    for _, investigation := range plateInvestigation {
+        if investigation.SlotID < 0 {
+            t.Errorf("Invalid slot ID: %d", investigation.SlotID)
+        }
+        if investigation.ParkingTime.IsZero() {
+            t.Errorf("Parking time should not be zero")
+        }
+    }
+}
+

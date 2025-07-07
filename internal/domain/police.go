@@ -124,3 +124,54 @@ type BombThreatInvestigation struct {
     SlotID      int
     ParkingTime time.Time
 }
+
+//UC-16
+// InvestigateHandicapPermitFraud finds small handicap cars in specific rows for fraud investigation
+func (pd *PoliceDepartment) InvestigateHandicapPermitFraud(lots []*ParkingLot, targetRows []string) []HandicapFraudInvestigation {
+    var allFraudCars []HandicapFraudInvestigation
+    
+    for i, lot := range lots {
+        suspiciousCars := lot.FindSmallHandicapCarsInRows(targetRows)
+        for _, carInfo := range suspiciousCars {
+            investigation := HandicapFraudInvestigation{
+                CarInfo: carInfo,
+                LotID:   i,
+            }
+            allFraudCars = append(allFraudCars, investigation)
+        }
+    }
+    
+    return allFraudCars
+}
+
+// HandicapFraudInvestigation represents information for handicap permit fraud investigation
+type HandicapFraudInvestigation struct {
+    CarInfo CarParkingInfo
+    LotID   int
+}
+
+//UC-17
+// InvestigateFraudulentPlates gets all cars in a specific lot for plate fraud investigation
+func (pd *PoliceDepartment) InvestigateFraudulentPlates(lot *ParkingLot) []PlateInvestigation {
+    var allPlateInvestigations []PlateInvestigation
+    
+    allCars := lot.GetAllParkedCars()
+    for _, car := range allCars {
+        investigation := PlateInvestigation{
+            Car:         car,
+            SlotID:      lot.FindCar(car.Plate),
+            ParkingTime: lot.GetParkingTime(car.Plate),
+        }
+        allPlateInvestigations = append(allPlateInvestigations, investigation)
+    }
+    
+    return allPlateInvestigations
+}
+
+// PlateInvestigation represents information for fraudulent plate number investigation
+type PlateInvestigation struct {
+    Car         Car
+    SlotID      int
+    ParkingTime time.Time
+}
+

@@ -4,6 +4,14 @@ import (
 	"time"
 )
 
+//UC-16
+type CarParkingInfo struct {
+    Car        Car
+    Row        string
+    SlotID     int
+    IsHandicap bool
+}
+
 type ParkingLot struct {
 	capacity         int
 	parkedCars       []Car
@@ -11,6 +19,7 @@ type ParkingLot struct {
 	securityObserver Security
 	wasFull bool // to track previous full state
 	parkingTimes     map[string]time.Time // Track when each car was parked for use case-8
+	carParkingInfo   map[string]CarParkingInfo // Maps plate to parking info, UC-16
 }
 
 //constructor to create a new parking lot with required capacity
@@ -20,6 +29,7 @@ func NewParkingLot(capacity int) *ParkingLot {
 		parkedCars: make([]Car, 0),
 		wasFull: false,
 		parkingTimes: make(map[string]time.Time), //added for use case -8
+		carParkingInfo: make(map[string]CarParkingInfo),
 	}
 }
 
@@ -183,4 +193,58 @@ func (p *ParkingLot) SetParkingTime(plateNumber string, parkTime time.Time) {
     p.parkingTimes[plateNumber] = parkTime
 }
 
+//UC-16
+// ParkInRow parks a car in a specific row with handicap designation
+func (p *ParkingLot) ParkInRow(car Car, row string, isHandicap bool) bool {
+    if len(p.parkedCars) >= p.capacity {
+        return false
+    }
+    
+    // Park the car normally
+    if !p.Park(car) {
+        return false
+    }
+    
+    // Store additional parking information
+    slotID := len(p.parkedCars) - 1 // Last added car's slot
+    parkingInfo := CarParkingInfo{
+        Car:        car,
+        Row:        row,
+        SlotID:     slotID,
+        IsHandicap: isHandicap,
+    }
+    p.carParkingInfo[car.Plate] = parkingInfo
+    
+    return true
+}
 
+// FindSmallHandicapCarsInRows finds small handicap cars in specified rows
+func (p *ParkingLot) FindSmallHandicapCarsInRows(targetRows []string) []CarParkingInfo {
+    var matchingCars []CarParkingInfo
+    
+    // Create a map for quick row lookup
+    rowMap := make(map[string]bool)
+    for _, row := range targetRows {
+        rowMap[row] = true
+    }
+    
+    for _, parkingInfo := range p.carParkingInfo {
+        // Check if car meets all criteria
+        if parkingInfo.Car.Size == Small && 
+           parkingInfo.IsHandicap && 
+           rowMap[parkingInfo.Row] {
+            matchingCars = append(matchingCars, parkingInfo)
+        }
+    }
+    
+    return matchingCars
+}
+
+//UC-17
+// GetAllParkedCars returns all currently parked cars
+func (p *ParkingLot) GetAllParkedCars() []Car {
+    // Return a copy of the parked cars slice to prevent external modification
+    allCars := make([]Car, len(p.parkedCars))
+    copy(allCars, p.parkedCars)
+    return allCars
+}
